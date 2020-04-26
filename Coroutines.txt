@@ -1,0 +1,49 @@
+	*Coroutines are used to make background tasks , we use it to simplify async code by replacing callbacks*
+1- Coroutines are considered as mini threads but NOT Threads they live inside threads , so a thread can have many coroutines
+	launched inside of it so you might think of it as jobs inside the thread
+
+2- Coroutines are thread independent they can change the context of the thread going to one and another
+	 by just calling withContext
+
+3- withContext change the context of the current thread there are :
+	 Main , IO (for background tasks like Db & network) , Default (for huge calculated tasks)
+
+4- Suspend functions can only be called within another suspend funtions or inside a croutine
+
+5- to launch a cortouine we need a coroutine scope which can be considered as a group of coroutines luanched in a thread
+
+6- JOBS inside of a SINGLE coroutine are sequential so the second job is waiting for the first job to be done and so on ,
+	if they are in the same launch but if each has its own launch then they will be started at the same time
+
+7- to handle timeouts with coroutines we just use withTimeOutOrnNull instead of luanch and specify the timeout we want
+	and if it's timed out then the job will be null hence we can know if it's timed out or not
+
+8- to cancel a job we just use cancel() method to the job and if's canceld you can't re-use the job , you have to create a new one
+
+9- we can use a completableJob to determine if the job is completed or not and have more controll over it with cancelation and stuff
+	when a timeout happens the invokOnCompletion (called when done or timedout) method is called with the cancelationException 
+	which we throw to the job with job.cancel(CancellationException("Error Message")) ,
+	just to remember to do coroutineScope(IO + job) to cancel the job only not the whole scope
+
+10- GlobalScope is the general scope like main for instance which we can't cancel or otherwise the whole app will freeze
+	we can use to just update something in the UI for instance
+
+11- to measure the time of a job in a coroutine we call val time = measureTimeMillis{do whatever} 
+	this can only be called inside a coroutine
+
+12- if we want the result outside of the coroutine we define it as a deferred<Type> 
+	like val result : Deferred<String> = async{do whatever}and then we must call await on it like result.await() 
+	and if we made more than one all jobs begin executing at the same time
+	if we called await before the second one then it waits for it 
+	but if we called await for both jobs then they begin at the same time
+
+13- Remember that if we cancel a praent job all its job children will be canceld as well 
+
+14- if a parent job has 3 children and the second one fails by throwning an exception for instancethe rest of the jobs (job 3)
+	is canceled and the parent job failes and gets canceled as well
+
+15- if one of childeren is canceled or throw a cancellationException the rest will succed
+ 	so it's better to throw the cancellationExcpetion rather than the regular exception sometimes 
+	but just remember to add the coroutineExceptionHandeler to the parent
+
+16- if you want to run all your jobs no matter how many fail then use the supervisorJob (Look for it not sure of the name)
